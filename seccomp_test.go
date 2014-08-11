@@ -259,7 +259,7 @@ func TestFilterContainsArch(t *testing.T) {
 		t.Errorf("Error getting native architecture: %s", err)
 	}
 
-	present, err := filter.IsArchPresent(arch) 
+	present, err := filter.IsArchPresent(arch)
 	if err != nil {
 		t.Errorf("Error retrieving arch from filter: %s", err)
 	} else if !present {
@@ -279,7 +279,7 @@ func TestFilterContainsArch(t *testing.T) {
 			prospectiveArch.String(), err)
 	}
 
-	present, err = filter.IsArchPresent(prospectiveArch) 
+	present, err = filter.IsArchPresent(prospectiveArch)
 	if err != nil {
 		t.Errorf("Error retrieving arch from filter: %s", err)
 	} else if !present {
@@ -294,7 +294,7 @@ func TestFilterContainsArch(t *testing.T) {
 			prospectiveArch.String(), err)
 	}
 
-	present, err = filter.IsArchPresent(prospectiveArch) 
+	present, err = filter.IsArchPresent(prospectiveArch)
 	if err != nil {
 		t.Errorf("Error retrieving arch from filter: %s", err)
 	} else if present {
@@ -437,7 +437,7 @@ func TestRuleAddAndLoad(t *testing.T) {
 		t.Errorf("Error making rule to restrict syscall: %s", err)
 	}
 
-	conditions := []ScmpCondition { *cond, *cond2 }
+	conditions := []ScmpCondition{*cond, *cond2}
 
 	err = filter1.AddRuleConditional(call2, ActErrno.SetReturnCode(0x2), conditions)
 

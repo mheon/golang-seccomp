@@ -17,9 +17,6 @@
  * along with this library; if not, see <http://www.gnu.org/licenses>.
  */
 
-// Provides bindings for libseccomp, a library wrapping the Linux seccomp
-// syscall. Seccomp enables an application to restrict system call use for
-// itself and its children.
 package seccomp
 
 import (

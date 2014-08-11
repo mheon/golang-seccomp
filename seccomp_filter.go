@@ -17,15 +17,12 @@
  * along with this library; if not, see <http://www.gnu.org/licenses>.
  */
 
-// Provides bindings for libseccomp, a library wrapping the Linux seccomp
-// syscall. Seccomp enables an application to restrict system call use for
-// itself and its children.
 package seccomp
 
 import (
 	"fmt"
 	"os"
-	"sync"	
+	"sync"
 	"syscall"
 )
 
@@ -36,7 +33,7 @@ import "C"
 
 // Public Filter API
 
-// Represents a filter context in libseccomp
+// Represents a filter context in libseccomp.
 // A filter context is initially empty. Rules can be added to it, and it can
 // then be loaded into the kernel.
 type ScmpFilter struct {
@@ -45,7 +42,7 @@ type ScmpFilter struct {
 	lock      sync.Mutex
 }
 
-// Create a new filter context
+// Create a new filter context.
 // Accepts a default action to be taken for syscalls which match no rules in
 // the filter.
 // Returns a reference to a valid filter context, or nil and an error if the
@@ -67,7 +64,9 @@ func NewFilter(defaultAction ScmpAction) (*ScmpFilter, error) {
 	return filter, nil
 }
 
-// Determine whether a filter context is valid - IE, can be used
+// Determine whether a filter context is valid to use.
+// Some operations (Release and Merge) render filter contexts invalid and
+// consequently prevent further use.
 func (f *ScmpFilter) IsValid() bool {
 	f.lock.Lock()
 	defer f.lock.Unlock()
@@ -75,8 +74,8 @@ func (f *ScmpFilter) IsValid() bool {
 	return f.valid
 }
 
-// Reset a filter context, removing all its existing state
-// Accepts a new default action to be taken for syscalls which do not match
+// Reset a filter context, removing all its existing state.
+// Accepts a new default action to be taken for syscalls which do not match.
 // Returns an error if the filter or action provided are invalid.
 func (f *ScmpFilter) Reset(defaultAction ScmpAction) error {
 	f.lock.Lock()
@@ -117,7 +116,7 @@ func (f *ScmpFilter) Release() {
 // longer be usable or valid after this call.
 // To be merged, filters must NOT share any architectures, and all their
 // attributes must match.
-// The filter src will be merged into the filter this is called on
+// The filter src will be merged into the filter this is called on.
 // The architectures of the src filter not present in the destination, and all
 // associated rules, will be added to the destination.
 // Returns an error if merging the filters failed.
@@ -142,17 +141,17 @@ func (f *ScmpFilter) Merge(src *ScmpFilter) error {
 	return nil
 }
 
-// Check if an architecture is present in a filter
+// Check if an architecture is present in a filter.
 // If a filter contains an architecture, it uses its default action for
 // syscalls which do not match rules in it, and its rules can match syscalls
 // for that ABI.
 // If a filter does not contain an architecture, all syscalls made to that
 // kernel ABI will fail with the filter's default Bad Architecture Action
-// (by default, killing the process)
-// Accepts an architecture constant
+// (by default, killing the process).
+// Accepts an architecture constant.
 // Returns true if the architecture is present in the filter, false otherwise,
 // and an error on an invalid filter context, architecture constant, or an
-// issue with the call to libseccomp
+// issue with the call to libseccomp.
 func (f *ScmpFilter) IsArchPresent(arch ScmpArch) (bool, error) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
@@ -174,10 +173,10 @@ func (f *ScmpFilter) IsArchPresent(arch ScmpArch) (bool, error) {
 	return true, nil
 }
 
-// Add an architecture to the filter
-// Accepts an architecture constant
+// Add an architecture to the filter.
+// Accepts an architecture constant.
 // Returns an error on invalid filter context or architecture token, or an
-// issue with the call to libseccomp
+// issue with the call to libseccomp.
 func (f *ScmpFilter) AddArch(arch ScmpArch) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
@@ -196,10 +195,10 @@ func (f *ScmpFilter) AddArch(arch ScmpArch) error {
 	return nil
 }
 
-// Remove an architecture from the filter
-// Accepts an architecture constant
+// Remove an architecture from the filter.
+// Accepts an architecture constant.
 // Returns an error on invalid filter context or architecture token, or an
-// issue with the call to libseccomp
+// issue with the call to libseccomp.
 func (f *ScmpFilter) RemoveArch(arch ScmpArch) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
@@ -218,8 +217,8 @@ func (f *ScmpFilter) RemoveArch(arch ScmpArch) error {
 	return nil
 }
 
-// Load a filter context into the kernel
-// Returns an error if the filter context is invalid or the syscall failed
+// Load a filter context into the kernel.
+// Returns an error if the filter context is invalid or the syscall failed.
 func (f *ScmpFilter) Load() error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
@@ -289,8 +288,8 @@ func (f *ScmpFilter) SetBadArchAction(action ScmpAction) error {
 
 // Set the state of the No New Privileges bit, which will be applied on filter
 // load, or an error if an issue was encountered setting the value.
-// Filters with No New Privileges set to 1 can only be loaded with the
-// CAP_SYS_ADMIN privilege
+// Filters with No New Privileges set to 0 can only be loaded with the
+// CAP_SYS_ADMIN privilege.
 func (f *ScmpFilter) SetNoNewPrivsBit(state bool) error {
 	var toSet C.uint32_t = 0x0
 
@@ -301,11 +300,11 @@ func (f *ScmpFilter) SetNoNewPrivsBit(state bool) error {
 	return f.setFilterAttr(filterAttrNNP, toSet)
 }
 
-// Set a syscall's priority
+// Set a syscall's priority.
 // This provides a hint to the filter generator in libseccomp about the
 // importance of this syscall. High-priority syscalls are placed
 // first in the filter code, and incur less overhead (at the expense of
-// lower-priority syscalls)
+// lower-priority syscalls).
 func (f *ScmpFilter) SetSyscallPriority(call ScmpSyscall, priority uint8) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
@@ -322,41 +321,41 @@ func (f *ScmpFilter) SetSyscallPriority(call ScmpSyscall, priority uint8) error 
 	return nil
 }
 
-// Add a single rule for an unconditional action on a syscall
+// Add a single rule for an unconditional action on a syscall.
 // Accepts the number of the syscall and the action to be taken on the call
-// being made
-// Returns an error if an issue was encountered adding the rule
+// being made.
+// Returns an error if an issue was encountered adding the rule.
 func (f *ScmpFilter) AddRule(call ScmpSyscall, action ScmpAction) error {
 	return f.addRuleGeneric(call, action, false, nil)
 }
 
-// Add a single rule for an unconditional action on a syscall
+// Add a single rule for an unconditional action on a syscall.
 // Accepts the number of the syscall and the action to be taken on the call
-// being made
+// being made.
 // No modifications will be made to the rule, and it will fail to add if it
 // cannot be applied to the current architecture without modification.
 // The rule will function exactly as described, but it may not function identically
 // (or be able to be applied to) all architectures.
-// Returns an error if an issue was encountered adding the rule
+// Returns an error if an issue was encountered adding the rule.
 func (f *ScmpFilter) AddRuleExact(call ScmpSyscall, action ScmpAction) error {
 	return f.addRuleGeneric(call, action, true, nil)
 }
 
-// Add a single rule for a conditional action on a syscall
-// Returns an error if an issue was encountered adding the rule
-// All conditions must match for the rule to match
+// Add a single rule for a conditional action on a syscall.
+// Returns an error if an issue was encountered adding the rule.
+// All conditions must match for the rule to match.
 func (f *ScmpFilter) AddRuleConditional(call ScmpSyscall, action ScmpAction,
 	conds []ScmpCondition) error {
 
 	return f.addRuleGeneric(call, action, false, conds)
 }
 
-// Add a single rule for a conditional action on a syscall
+// Add a single rule for a conditional action on a syscall.
 // No modifications will be made to the rule, and it will fail to add if it
 // cannot be applied to the current architecture without modification.
 // The rule will function exactly as described, but it may not function identically
 // (or be able to be applied to) all architectures.
-// Returns an error if an issue was encountered adding the rule
+// Returns an error if an issue was encountered adding the rule.
 func (f *ScmpFilter) AddRuleConditionalExact(call ScmpSyscall,
 	action ScmpAction, conds []ScmpCondition) error {
 
@@ -365,8 +364,8 @@ func (f *ScmpFilter) AddRuleConditionalExact(call ScmpSyscall,
 
 // Output PFC-formatted, human-readable dump of a filter context's rules to a
 // file.
-// Accepts file to write to (must be open for writing)
-// Returns an error if writing to the file fails
+// Accepts file to write to (must be open for writing).
+// Returns an error if writing to the file fails.
 func (f *ScmpFilter) ExportPFC(file *os.File) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
@@ -386,8 +385,8 @@ func (f *ScmpFilter) ExportPFC(file *os.File) error {
 
 // Output Berkeley Packet Filter-formatted, kernel-readable dump of a filter
 // context's rules to a file.
-// Accepts file to write to (must be open for writing)
-// Returns an error if writing to the file fails
+// Accepts file to write to (must be open for writing).
+// Returns an error if writing to the file fails.
 func (f *ScmpFilter) ExportBPF(file *os.File) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()

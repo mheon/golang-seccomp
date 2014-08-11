@@ -67,37 +67,39 @@ const (
 	// Ensure uninitialized ScmpArch variables are invalid
 	ArchInvalid ScmpArch = iota
 	// The native architecture of the kernel
-	ArchNative  ScmpArch = iota
+	ArchNative ScmpArch = iota
 	// 32-bit x86 syscalls
-	ArchX86     ScmpArch = iota
+	ArchX86 ScmpArch = iota
 	// 64-bit x86-64 syscalls
-	ArchAMD64   ScmpArch = iota
+	ArchAMD64 ScmpArch = iota
 	// Syscalls in the kernel x32 ABI
-	ArchX32     ScmpArch = iota
+	ArchX32 ScmpArch = iota
 	// 32-bit ARM syscalls
-	ArchARM     ScmpArch = iota
+	ArchARM ScmpArch = iota
 )
 
 const (
 	// Supported actions on filter match
+
 	// Ensure uninitialized ScmpAction variables are invalid
 	ActInvalid ScmpAction = iota
 	// Kill process
-	ActKill    ScmpAction = iota
+	ActKill ScmpAction = iota
 	// Throw SIGSYS
-	ActTrap    ScmpAction = iota
+	ActTrap ScmpAction = iota
 	// The syscall will return an negative error code
 	// This code can be set with the SetReturnCode method
-	ActErrno   ScmpAction = iota
+	ActErrno ScmpAction = iota
 	// Notify tracing processes with given error code
 	// This code can be set with the SetReturnCode method
-	ActTrace   ScmpAction = iota
+	ActTrace ScmpAction = iota
 	// Permit the syscall to continue execution
-	ActAllow   ScmpAction = iota
+	ActAllow ScmpAction = iota
 )
 
 const (
 	// These are comparison operators used in conditional seccomp rules
+
 	// Ensure uninitialized ScmpCompareOp variables are invalid
 	CompareInvalid      ScmpCompareOp = iota
 	CompareNotEqual     ScmpCompareOp = iota
@@ -176,8 +178,8 @@ func (a ScmpAction) String() string {
 
 // Add a return code to a supporting ScmpAction, clearing any existing code
 // Only valid on ActErrno and ActTrace. Takes no action otherwise.
-// Accepts 16-bit return code as argument
-// Returns a valid ScmpAction of the original type with the new error code set
+// Accepts 16-bit return code as argument.
+// Returns a valid ScmpAction of the original type with the new error code set.
 func (a ScmpAction) SetReturnCode(code int16) ScmpAction {
 	aTmp := a & 0x0000FFFF
 	if aTmp == ActErrno || aTmp == ActTrace {
@@ -193,18 +195,18 @@ func (a ScmpAction) GetReturnCode() int16 {
 
 // Syscall functions
 
-// Get the name of a syscall from its number
+// Get the name of a syscall from its number.
 // Acts on any syscall number.
-// Returns either a string containing the name of the syscall, or an error
+// Returns either a string containing the name of the syscall, or an error.
 func (s ScmpSyscall) GetName() (string, error) {
 	return s.GetNameByArch(ArchNative)
 }
 
-// Get the name of a syscall from its number for a given architecture
+// Get the name of a syscall from its number for a given architecture.
 // Acts on any syscall number.
-// Accepts a valid architecture constant
-// Returns either a string containing the name of the syscall, or an error
-// if the syscall is unrecognized or an issue occurred
+// Accepts a valid architecture constant.
+// Returns either a string containing the name of the syscall, or an error.
+// if the syscall is unrecognized or an issue occurred.
 func (s ScmpSyscall) GetNameByArch(arch ScmpArch) (string, error) {
 	if err := sanitizeArch(arch); err != nil {
 		return "", err
@@ -220,8 +222,8 @@ func (s ScmpSyscall) GetNameByArch(arch ScmpArch) (string, error) {
 	return finalStr, nil
 }
 
-// Get the number of a syscall by name on the kernel's native architecture
-// Accepts a string containing the name of a syscall
+// Get the number of a syscall by name on the kernel's native architecture.
+// Accepts a string containing the name of a syscall.
 // Returns the number of the syscall, or an error if no syscall with that name
 // was found.
 func GetSyscallFromName(name string) (ScmpSyscall, error) {
@@ -236,8 +238,8 @@ func GetSyscallFromName(name string) (ScmpSyscall, error) {
 	return ScmpSyscall(result), nil
 }
 
-// Get the number of a syscall by name for a given architecture's ABI
-// Accepts the name of a syscall and an architecture constant
+// Get the number of a syscall by name for a given architecture's ABI.
+// Accepts the name of a syscall and an architecture constant.
 // Returns the number of the syscall, or an error if an invalid architecture is
 // passed or a syscall with that name was not found.
 func GetSyscallFromNameByArch(name string, arch ScmpArch) (ScmpSyscall, error) {
@@ -256,16 +258,16 @@ func GetSyscallFromNameByArch(name string, arch ScmpArch) (ScmpSyscall, error) {
 	return ScmpSyscall(result), nil
 }
 
-// Make a new condition to attach to a filter rule
-// Associated rules will only match if this condition is true
+// Make a new condition to attach to a filter rule.
+// Associated rules will only match if this condition is true.
 // Accepts the number the argument we are checking, and a comparison operator
-// and value to compare to
+// and value to compare to.
 // The rule will match if argument $arg (zero-indexed) of the syscall is
-// $COMPARE_OP the provided comparison value
+// $COMPARE_OP the provided comparison value.
 // For example, in the less than or equal case, if the syscall argument was
 // 0 and the value provided was 1, the condition would match, as 0 is less
-// than or equal to 1
-// Return either an error on bad argument or a valid ScmpCondition struct
+// than or equal to 1.
+// Return either an error on bad argument or a valid ScmpCondition struct.
 func MakeCondition(arg uint, comparison ScmpCompareOp, value uint64) (*ScmpCondition, error) {
 
 	if comparison == CompareMaskedEqual {
@@ -288,6 +290,8 @@ func MakeCondition(arg uint, comparison ScmpCompareOp, value uint64) (*ScmpCondi
 
 // Functions similarly to MakeCondition(), but accepts an additional parameter,
 // a mask - only bits set to 1 in the mask are compared by this rule.
+// Only works with Masked comparison operators (at present, only
+// CompareMaskedEquals).
 func MakeConditionMasked(arg uint, comparison ScmpCompareOp, value uint64,
 	mask uint64) (*ScmpCondition, error) {
 
