@@ -21,6 +21,7 @@ package seccomp
 
 import (
 	"fmt"
+	"os"
 	"syscall"
 )
 
@@ -56,6 +57,10 @@ const int      C_CMP_EQ            = (int)SCMP_CMP_EQ;
 const int      C_CMP_GE            = (int)SCMP_CMP_GE;
 const int      C_CMP_GT            = (int)SCMP_CMP_GT;
 const int      C_CMP_MASKED_EQ     = (int)SCMP_CMP_MASKED_EQ;
+
+const int      C_VERSION_MAJOR     = SCMP_VER_MAJOR;
+const int      C_VERSION_MINOR     = SCMP_VER_MINOR;
+const int      C_VERSION_MICRO     = SCMP_VER_MICRO;
 
 
 // Wrapper to make an array of scmp_arg_cmp structs
@@ -121,6 +126,18 @@ const (
 )
 
 // Nonexported functions
+
+// Init function: Verify library version is appropriate
+func init() {
+	if C.C_VERSION_MAJOR < 2 || C.C_VERSION_MAJOR == 2 &&
+		C.C_VERSION_MINOR < 1 {
+
+		fmt.Fprintf(os.Stderr, "Libseccomp version too low:" +
+			"minimum supported is 2.1.0, detected %d.%d.%d", C.C_VERSION_MAJOR,
+			C.C_VERSION_MINOR, C.C_VERSION_MICRO)
+		os.Exit(-1)
+	}
+}
 
 // Filter helpers
 
