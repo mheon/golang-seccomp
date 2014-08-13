@@ -187,8 +187,11 @@ func (f *ScmpFilter) AddArch(arch ScmpArch) error {
 		return fmt.Errorf("Filter is invalid or uninitialized")
 	}
 
+	// Libseccomp returns -EEXIST if the specified architecture is already
+	// present. Succeed silently in this case, as it's not fatal, and the
+	// architecture is present already.
 	retCode := C.seccomp_arch_add(f.filterCtx, arch.toNative())
-	if retCode != 0 {
+	if retCode != 0 && syscall.Errno(-1 * retCode) != syscall.EEXIST {
 		return syscall.Errno(-1 * retCode)
 	}
 

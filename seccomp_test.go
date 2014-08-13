@@ -247,7 +247,7 @@ func TestFilterReset(t *testing.T) {
 	}
 }
 
-func TestFilterContainsArch(t *testing.T) {
+func TestFilterArchFunctions(t *testing.T) {
 	filter, err := NewFilter(ActKill)
 	if err != nil {
 		t.Errorf("Error creating filter: %s", err)
@@ -264,6 +264,12 @@ func TestFilterContainsArch(t *testing.T) {
 		t.Errorf("Error retrieving arch from filter: %s", err)
 	} else if !present {
 		t.Errorf("Filter does not contain native architecture by default")
+	}
+
+	// Adding the native arch again should succeed, as it's already present
+	err = filter.AddArch(arch)
+	if err != nil {
+		t.Errorf("Adding arch to filter already containing it should succeed")
 	}
 
 	// Make sure we don't add the native arch again
