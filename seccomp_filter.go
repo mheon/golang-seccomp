@@ -212,8 +212,11 @@ func (f *ScmpFilter) RemoveArch(arch ScmpArch) error {
 		return fmt.Errorf("Filter is invalid or uninitialized")
 	}
 
+	// Similar to AddArch, -EEXIST is returned if the arch is not present
+	// Succeed silently in that case, this is not fatal and the architecture
+	// is not present in the filter after RemoveArch
 	retCode := C.seccomp_arch_remove(f.filterCtx, arch.toNative())
-	if retCode != 0 {
+	if retCode != 0 && syscall.Errno(-1 * retCode) != syscall.EEXIST {
 		return syscall.Errno(-1 * retCode)
 	}
 

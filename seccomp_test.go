@@ -278,10 +278,24 @@ func TestFilterArchFunctions(t *testing.T) {
 		prospectiveArch = ArchAMD64
 	}
 
+	// Check to make sure this other arch isn't in the filter
+	present, err = filter.IsArchPresent(prospectiveArch)
+	if err != nil {
+		t.Errorf("Error retrieving arch from filter: %s", err)
+	} else if present {
+		t.Errorf("Arch not added to filter is present")
+	}
+
+	// Try removing the nonexistant arch - should succeed
+	err = filter.RemoveArch(prospectiveArch)
+	if err != nil {
+		t.Errorf("Error removing nonexistant arch: %s", err)
+	}
+
 	// Add an arch, see if it's in the filter
 	err = filter.AddArch(prospectiveArch)
 	if err != nil {
-		fmt.Errorf("Could not add arch %s to filter: %s",
+		t.Errorf("Could not add arch %s to filter: %s",
 			prospectiveArch.String(), err)
 	}
 
