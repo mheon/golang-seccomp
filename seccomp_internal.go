@@ -142,12 +142,14 @@ func init() {
 // Filter helpers
 
 // Get a raw filter attribute
-func (f *ScmpFilter) getFilterAttr(attr scmpFilterAttr) (C.uint32_t, error) {
-	f.lock.Lock()
-	defer f.lock.Unlock()
+func (f *ScmpFilter) getFilterAttr(attr scmpFilterAttr, lock bool) (C.uint32_t, error) {
+	if lock {
+		f.lock.Lock()
+		defer f.lock.Unlock()
 
-	if !f.valid {
-		return 0x0, fmt.Errorf("Filter is invalid or uninitialized")
+		if !f.valid {
+			return 0x0, fmt.Errorf("Filter is invalid or uninitialized")
+		}
 	}
 
 	var attribute C.uint32_t

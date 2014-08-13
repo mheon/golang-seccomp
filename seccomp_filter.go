@@ -132,6 +132,51 @@ func (f *ScmpFilter) Merge(src *ScmpFilter) error {
 			"One or more of the filter contexts is invalid or uninitialized")
 	}
 
+	// Check to ensure filter attributes match
+
+	default1, err := f.getFilterAttr(filterAttrActDefault, false)
+	if err != nil {
+		return err
+	}
+
+	default2, err := src.getFilterAttr(filterAttrActDefault, false)
+	if err != nil {
+		return err
+	}
+
+	if default1 != default2 {
+		return fmt.Errorf("Default Action on both filters must match")
+	}
+
+	badArch1, err := f.getFilterAttr(filterAttrActBadArch, false)
+	if err != nil {
+		return err
+	}
+
+	badArch2, err := src.getFilterAttr(filterAttrActBadArch, false)
+	if err != nil {
+		return err
+	}
+
+	if badArch1 != badArch2 {
+		return fmt.Errorf("Bad Architecture Action on both filters must match")
+	}
+
+	nnp1, err := f.getFilterAttr(filterAttrNNP, false)
+	if err != nil {
+		return err
+	}
+
+	nnp2, err := src.getFilterAttr(filterAttrNNP, false)
+	if err != nil {
+		return err
+	}
+
+	if nnp1 != nnp2 {
+		return fmt.Errorf("No new privileges bit on both filters must match")
+	}
+
+	// Merge the filters
 	if retCode := C.seccomp_merge(f.filterCtx, src.filterCtx); retCode != 0 {
 		return syscall.Errno(-1 * retCode)
 	}
@@ -243,7 +288,7 @@ func (f *ScmpFilter) Load() error {
 // Returns the default action taken on a syscall which does not match a rule in
 // the filter, or an error if an issue was encountered retrieving the value.
 func (f *ScmpFilter) GetDefaultAction() (ScmpAction, error) {
-	action, err := f.getFilterAttr(filterAttrActDefault)
+	action, err := f.getFilterAttr(filterAttrActDefault, true)
 	if err != nil {
 		return 0x0, err
 	}
@@ -254,7 +299,7 @@ func (f *ScmpFilter) GetDefaultAction() (ScmpAction, error) {
 // Returns the default action taken on a syscall for an architecture not in the
 // filter, or an error if an issue was encountered retrieving the value.
 func (f *ScmpFilter) GetBadArchAction() (ScmpAction, error) {
-	action, err := f.getFilterAttr(filterAttrActBadArch)
+	action, err := f.getFilterAttr(filterAttrActBadArch, true)
 	if err != nil {
 		return 0x0, err
 	}
@@ -270,7 +315,7 @@ func (f *ScmpFilter) GetBadArchAction() (ScmpAction, error) {
 // For example, a process with No New Privileges set would be unable to exec
 // setuid/setgid executables.
 func (f *ScmpFilter) GetNoNewPrivsBit() (bool, error) {
-	noNewPrivs, err := f.getFilterAttr(filterAttrNNP)
+	noNewPrivs, err := f.getFilterAttr(filterAttrNNP, true)
 	if err != nil {
 		return false, err
 	}
