@@ -221,7 +221,9 @@ func (f *ScmpFilter) addRuleGeneric(call ScmpSyscall, action ScmpAction,
 			C.scmp_cast_t(condArray))
 	}
 
-	if retCode != 0 {
+	if syscall.Errno(-1 * retCode) == syscall.EFAULT {
+		return fmt.Errorf("Unrecognized syscall")
+	} else if retCode != 0 {
 		return syscall.Errno(-1 * retCode)
 	}
 
