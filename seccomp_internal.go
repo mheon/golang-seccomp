@@ -132,7 +132,7 @@ func init() {
 	if C.C_VERSION_MAJOR < 2 || C.C_VERSION_MAJOR == 2 &&
 		C.C_VERSION_MINOR < 1 {
 
-		fmt.Fprintf(os.Stderr, "Libseccomp version too low:" +
+		fmt.Fprintf(os.Stderr, "Libseccomp version too low:"+
 			"minimum supported is 2.1.0, detected %d.%d.%d", C.C_VERSION_MAJOR,
 			C.C_VERSION_MINOR, C.C_VERSION_MICRO)
 		os.Exit(-1)
@@ -221,7 +221,7 @@ func (f *ScmpFilter) addRuleGeneric(call ScmpSyscall, action ScmpAction,
 			C.scmp_cast_t(condArray))
 	}
 
-	if syscall.Errno(-1 * retCode) == syscall.EFAULT {
+	if syscall.Errno(-1*retCode) == syscall.EFAULT {
 		return fmt.Errorf("Unrecognized syscall")
 	} else if retCode != 0 {
 		return syscall.Errno(-1 * retCode)

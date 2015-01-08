@@ -236,7 +236,7 @@ func (f *ScmpFilter) AddArch(arch ScmpArch) error {
 	// present. Succeed silently in this case, as it's not fatal, and the
 	// architecture is present already.
 	retCode := C.seccomp_arch_add(f.filterCtx, arch.toNative())
-	if retCode != 0 && syscall.Errno(-1 * retCode) != syscall.EEXIST {
+	if retCode != 0 && syscall.Errno(-1*retCode) != syscall.EEXIST {
 		return syscall.Errno(-1 * retCode)
 	}
 
@@ -261,7 +261,7 @@ func (f *ScmpFilter) RemoveArch(arch ScmpArch) error {
 	// Succeed silently in that case, this is not fatal and the architecture
 	// is not present in the filter after RemoveArch
 	retCode := C.seccomp_arch_remove(f.filterCtx, arch.toNative())
-	if retCode != 0 && syscall.Errno(-1 * retCode) != syscall.EEXIST {
+	if retCode != 0 && syscall.Errno(-1*retCode) != syscall.EEXIST {
 		return syscall.Errno(-1 * retCode)
 	}
 
