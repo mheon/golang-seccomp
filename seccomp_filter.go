@@ -22,6 +22,7 @@ package seccomp
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"sync"
 	"syscall"
 )
@@ -60,6 +61,7 @@ func NewFilter(defaultAction ScmpAction) (*ScmpFilter, error) {
 	filter := new(ScmpFilter)
 	filter.filterCtx = fPtr
 	filter.valid = true
+	runtime.SetFinalizer(filter, filterFinalizer)
 
 	return filter, nil
 }
@@ -99,6 +101,8 @@ func (f *ScmpFilter) Reset(defaultAction ScmpAction) error {
 // loading into the kernel, when the filter is no longer needed.
 // After calling this function, the given filter is no longer valid and cannot
 // be used.
+// Release() will be invoked automatically when a filter context is garbage
+// collected, but can also be called manually to free memory.
 func (f *ScmpFilter) Release() {
 	f.lock.Lock()
 	defer f.lock.Unlock()

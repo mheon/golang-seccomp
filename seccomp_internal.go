@@ -141,6 +141,11 @@ func init() {
 
 // Filter helpers
 
+// Filter finalizer - ensure that kernel context for filters is freed
+func filterFinalizer(f *ScmpFilter) {
+	f.Release()
+}
+
 // Get a raw filter attribute
 func (f *ScmpFilter) getFilterAttr(attr scmpFilterAttr, lock bool) (C.uint32_t, error) {
 	if lock {
