@@ -50,10 +50,10 @@ type ScmpCompareOp uint
 
 // Represents a rule in a libseccomp filter context
 type ScmpCondition struct {
-	Argument uint `json:"argument,omitempty"`
+	Argument uint          `json:"argument,omitempty"`
 	Op       ScmpCompareOp `json:"operator,omitempty"`
-	Operand1 uint64 `json:"operand_one,omitempty"`
-	Operand2 uint64 `json:"operand_two,omitempty"`
+	Operand1 uint64        `json:"operand_one,omitempty"`
+	Operand2 uint64        `json:"operand_two,omitempty"`
 }
 
 // Represents a Linux System Call
