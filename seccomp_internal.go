@@ -62,41 +62,26 @@ const int      C_VERSION_MAJOR     = SCMP_VER_MAJOR;
 const int      C_VERSION_MINOR     = SCMP_VER_MINOR;
 const int      C_VERSION_MICRO     = SCMP_VER_MICRO;
 
-
-// Wrapper to make an array of scmp_arg_cmp structs
-void*
-make_struct_scmp_arg_cmp_array(unsigned int size)
-{
-    struct scmp_arg_cmp *s;
-
-    if(size == 0) {
-        return NULL;
-    }
-
-    s = (struct scmp_arg_cmp *)malloc(size * sizeof(struct scmp_arg_cmp));
-
-    return (void *)s;
-}
-
-// Wrapper to fill scmp_arg_cmp structs, so Golang doesn't have to touch them
-void
-add_struct_scmp_arg_cmp_to_array(
-                                    void* array,
-                                    unsigned int index,
-                                    unsigned int arg,
-                                    int compare,
-                                    uint64_t a,
-                                    uint64_t b
-                                )
-{
-    struct scmp_arg_cmp* s = (struct scmp_arg_cmp *)array;
-    s[index].arg = arg;
-    s[index].datum_a = a;
-    s[index].datum_b = b;
-    s[index].op = compare;
-}
-
 typedef struct scmp_arg_cmp* scmp_cast_t;
+
+// Wrapper to create an scmp_arg_cmp struct
+void*
+make_struct_arg_cmp(
+                    unsigned int arg,
+                    int compare,
+                    uint64_t a,
+                    uint64_t b
+					)
+{
+	struct scmp_arg_cmp *s = malloc(sizeof(struct scmp_arg_cmp));
+
+	s->arg = arg;
+	s->op = compare;
+	s->datum_a = a;
+	s->datum_b = b;
+
+	return s;
+}
 */
 import "C"
 
@@ -184,6 +169,33 @@ func (f *ScmpFilter) setFilterAttr(attr scmpFilterAttr, value C.uint32_t) error 
 	return nil
 }
 
+// DOES NOT LOCK OR CHECK VALIDITY
+// Assumes caller has already done this
+// Wrapper for seccomp_rule_add_... functions
+func (f *ScmpFilter) addRuleWrapper(call ScmpSyscall, action ScmpAction, exact bool, cond C.scmp_cast_t) error {
+	var length C.uint
+	if cond != nil {
+		length = 1
+	} else {
+		length = 0
+	}
+
+	var retCode C.int
+	if exact {
+		retCode = C.seccomp_rule_add_exact_array(f.filterCtx, action.toNative(), C.int(call), length, cond)
+	} else {
+		retCode = C.seccomp_rule_add_array(f.filterCtx, action.toNative(), C.int(call), length, cond)
+	}
+
+	if syscall.Errno(-1*retCode) == syscall.EFAULT {
+		return fmt.Errorf("Unrecognized syscall")
+	} else if retCode != 0 {
+		return syscall.Errno(-1 * retCode)
+	}
+
+	return nil
+}
+
 // Generic add function for filter rules
 func (f *ScmpFilter) addRuleGeneric(call ScmpSyscall, action ScmpAction, exact bool, conds []ScmpCondition) error {
 
@@ -194,41 +206,19 @@ func (f *ScmpFilter) addRuleGeneric(call ScmpSyscall, action ScmpAction, exact b
 		return fmt.Errorf("Filter is invalid or uninitialized")
 	}
 
-	// If we have no conditions, this will not allocate memory and returns NULL
-	condArray := C.make_struct_scmp_arg_cmp_array(C.uint(len(conds)))
-	if len(conds) != 0 {
-		defer C.free(condArray)
-	}
-
-	// Place all the conditions in the array
-	// If the array is empty, does nothing
-	for i, cond := range conds {
-		// Make sure we provide a valid comparison operator
-		if err := sanitizeCompareOp(cond.Op); err != nil {
+	if len(conds) == 0 {
+		if err := f.addRuleWrapper(call, action, exact, nil); err != nil {
 			return err
 		}
-
-		C.add_struct_scmp_arg_cmp_to_array(condArray, C.uint(i),
-			C.uint(cond.Argument), cond.Op.toNative(),
-			C.uint64_t(cond.Operand1), C.uint64_t(cond.Operand2))
-	}
-
-	var retCode C.int
-
-	if exact {
-		retCode = C.seccomp_rule_add_exact_array(f.filterCtx,
-			action.toNative(), C.int(call), C.uint(len(conds)),
-			C.scmp_cast_t(condArray))
 	} else {
-		retCode = C.seccomp_rule_add_array(f.filterCtx,
-			action.toNative(), C.int(call), C.uint(len(conds)),
-			C.scmp_cast_t(condArray))
-	}
+		for _, cond := range conds {
+			cmpStruct := C.make_struct_arg_cmp(C.uint(cond.Argument), cond.Op.toNative(), C.uint64_t(cond.Operand1), C.uint64_t(cond.Operand2))
+			defer C.free(cmpStruct)
 
-	if syscall.Errno(-1*retCode) == syscall.EFAULT {
-		return fmt.Errorf("Unrecognized syscall")
-	} else if retCode != 0 {
-		return syscall.Errno(-1 * retCode)
+			if err := f.addRuleWrapper(call, action, exact, C.scmp_cast_t(cmpStruct)); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
