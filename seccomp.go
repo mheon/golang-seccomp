@@ -292,9 +292,7 @@ func MakeCondition(arg uint, comparison ScmpCompareOp, value uint64) (*ScmpCondi
 // a mask - only bits set to 1 in the mask are compared by this rule.
 // Only works with Masked comparison operators (at present, only
 // CompareMaskedEquals).
-func MakeConditionMasked(arg uint, comparison ScmpCompareOp, value uint64,
-	mask uint64) (*ScmpCondition, error) {
-
+func MakeConditionMasked(arg uint, comparison ScmpCompareOp, value uint64, mask uint64) (*ScmpCondition, error) {
 	if comparison != CompareMaskedEqual {
 		return nil, fmt.Errorf("Only masked comparisons use" +
 			"MakeConditionMasked!")

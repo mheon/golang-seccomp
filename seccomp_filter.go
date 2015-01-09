@@ -399,9 +399,7 @@ func (f *ScmpFilter) AddRuleExact(call ScmpSyscall, action ScmpAction) error {
 // Add a single rule for a conditional action on a syscall.
 // Returns an error if an issue was encountered adding the rule.
 // All conditions must match for the rule to match.
-func (f *ScmpFilter) AddRuleConditional(call ScmpSyscall, action ScmpAction,
-	conds []ScmpCondition) error {
-
+func (f *ScmpFilter) AddRuleConditional(call ScmpSyscall, action ScmpAction, conds []ScmpCondition) error {
 	return f.addRuleGeneric(call, action, false, conds)
 }
 
@@ -411,9 +409,7 @@ func (f *ScmpFilter) AddRuleConditional(call ScmpSyscall, action ScmpAction,
 // The rule will function exactly as described, but it may not function identically
 // (or be able to be applied to) all architectures.
 // Returns an error if an issue was encountered adding the rule.
-func (f *ScmpFilter) AddRuleConditionalExact(call ScmpSyscall,
-	action ScmpAction, conds []ScmpCondition) error {
-
+func (f *ScmpFilter) AddRuleConditionalExact(call ScmpSyscall, action ScmpAction, conds []ScmpCondition) error {
 	return f.addRuleGeneric(call, action, true, conds)
 }
 

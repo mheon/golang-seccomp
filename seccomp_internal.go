@@ -185,8 +185,7 @@ func (f *ScmpFilter) setFilterAttr(attr scmpFilterAttr, value C.uint32_t) error 
 }
 
 // Generic add function for filter rules
-func (f *ScmpFilter) addRuleGeneric(call ScmpSyscall, action ScmpAction,
-	exact bool, conds []ScmpCondition) error {
+func (f *ScmpFilter) addRuleGeneric(call ScmpSyscall, action ScmpAction, exact bool, conds []ScmpCondition) error {
 
 	f.lock.Lock()
 	defer f.lock.Unlock()
