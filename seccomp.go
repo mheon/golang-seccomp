@@ -268,22 +268,23 @@ func GetSyscallFromNameByArch(name string, arch ScmpArch) (ScmpSyscall, error) {
 // 0 and the value provided was 1, the condition would match, as 0 is less
 // than or equal to 1.
 // Return either an error on bad argument or a valid ScmpCondition struct.
-func MakeCondition(arg uint, comparison ScmpCompareOp, value uint64) (*ScmpCondition, error) {
+func MakeCondition(arg uint, comparison ScmpCompareOp, value uint64) (ScmpCondition, error) {
+	var condStruct ScmpCondition
 
 	if comparison == CompareMaskedEqual {
-		return nil, fmt.Errorf("Masked comparisons must use" +
+		return condStruct, fmt.Errorf("Masked comparisons must use" +
 			"MakeConditionMasked!")
 	} else if comparison == CompareInvalid {
-		return nil, fmt.Errorf("Invalid comparison operator!")
+		return condStruct, fmt.Errorf("Invalid comparison operator!")
 	} else if arg > 5 {
-		return nil, fmt.Errorf("Syscalls only have up to 6 arguments!")
+		return condStruct, fmt.Errorf("Syscalls only have up to 6 arguments!")
 	}
 
-	condStruct := new(ScmpCondition)
 
 	condStruct.Argument = arg
 	condStruct.Op = comparison
 	condStruct.Operand1 = value
+	condStruct.Operand2 = 0 // Unused
 
 	return condStruct, nil
 }
@@ -292,15 +293,15 @@ func MakeCondition(arg uint, comparison ScmpCompareOp, value uint64) (*ScmpCondi
 // a mask - only bits set to 1 in the mask are compared by this rule.
 // Only works with Masked comparison operators (at present, only
 // CompareMaskedEquals).
-func MakeConditionMasked(arg uint, comparison ScmpCompareOp, value uint64, mask uint64) (*ScmpCondition, error) {
+func MakeConditionMasked(arg uint, comparison ScmpCompareOp, value uint64, mask uint64) (ScmpCondition, error) {
+	var condStruct ScmpCondition
+
 	if comparison != CompareMaskedEqual {
-		return nil, fmt.Errorf("Only masked comparisons use" +
+		return condStruct, fmt.Errorf("Only masked comparisons use" +
 			"MakeConditionMasked!")
 	} else if arg > 5 {
-		return nil, fmt.Errorf("Syscalls only have up to 6 arguments!")
+		return condStruct, fmt.Errorf("Syscalls only have up to 6 arguments!")
 	}
-
-	condStruct := new(ScmpCondition)
 
 	condStruct.Argument = arg
 	condStruct.Op = comparison

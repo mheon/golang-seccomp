@@ -457,7 +457,7 @@ func TestRuleAddAndLoad(t *testing.T) {
 		t.Errorf("Error making rule to restrict syscall: %s", err)
 	}
 
-	conditions := []ScmpCondition{*cond, *cond2}
+	conditions := []ScmpCondition{cond, cond2}
 
 	err = filter1.AddRuleConditional(call2, ActErrno.SetReturnCode(0x2), conditions)
 
