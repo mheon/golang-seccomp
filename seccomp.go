@@ -24,6 +24,7 @@ package seccomp
 
 import (
 	"fmt"
+	"strings"
 	"unsafe"
 )
 
@@ -112,6 +113,22 @@ const (
 )
 
 // Helpers for types
+
+// Return an ScmpArch constant from a string representing an architecture
+func GetArchFromString(arch string) (ScmpArch, error) {
+	switch strings.ToLower(arch) {
+	case "x86":
+		return ArchX86, nil
+	case "amd64", "x86-64", "x86_64", "x64":
+		return ArchAMD64, nil
+	case "x32":
+		return ArchX32, nil
+	case "arm":
+		return ArchARM, nil
+	default:
+		return ArchInvalid, fmt.Errorf("Cannot convert unrecognized string %s", arch)
+	}
+}
 
 // Returns a string representation of an architecture constant
 func (a ScmpArch) String() string {
