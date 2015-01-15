@@ -189,6 +189,8 @@ func (f *ScmpFilter) addRuleWrapper(call ScmpSyscall, action ScmpAction, exact b
 
 	if syscall.Errno(-1*retCode) == syscall.EFAULT {
 		return fmt.Errorf("Unrecognized syscall")
+	} else if syscall.Errno(-1 * retCode) == syscall.EPERM {
+		return fmt.Errorf("Requested action matches default action of filter")
 	} else if retCode != 0 {
 		return syscall.Errno(-1 * retCode)
 	}
