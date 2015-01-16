@@ -137,6 +137,14 @@ func TestMakeCondition(t *testing.T) {
 		t.Errorf("Condition struct was filled incorrectly")
 	}
 
+	condition, err = MakeCondition(3, CompareMaskedEqual, 0x10, 0x20)
+	if err != nil {
+		t.Errorf("Error making condition struct: %s", err)
+	} else if condition.Argument != 3 || condition.Operand1 != 0x10 ||
+		condition.Operand2 != 0x20 || condition.Op != CompareMaskedEqual {
+		t.Errorf("Condition struct was filled incorrectly")
+	}
+
 	_, err = MakeCondition(7, CompareNotEqual, 0x10)
 	if err == nil {
 		t.Errorf("Condition struct with bad syscall argument number should error")
@@ -147,34 +155,14 @@ func TestMakeCondition(t *testing.T) {
 		t.Errorf("Condition struct with bad comparison operator should error")
 	}
 
-	_, err = MakeCondition(3, CompareMaskedEqual, 0x10)
+	_, err = MakeCondition(3, CompareMaskedEqual, 0x10, 0x20, 0x30)
 	if err == nil {
-		t.Errorf("MakeCondition on MaskedEq should fail")
-	}
-}
-
-func TestMakeConditionMasked(t *testing.T) {
-	condition, err := MakeConditionMasked(3, CompareMaskedEqual, 0x10, 0x100)
-	if err != nil {
-		t.Errorf("Error making condition struct: %s", err)
-	} else if condition.Argument != 3 || condition.Operand1 != 0x100 ||
-		condition.Operand2 != 0x10 || condition.Op != CompareMaskedEqual {
-		t.Errorf("Condition struct was filled incorrectly!")
+		t.Errorf("MakeCondition with more than 2 arguments should fail")
 	}
 
-	_, err = MakeConditionMasked(7, CompareMaskedEqual, 0x10, 0x100)
+	_, err = MakeCondition(3, CompareMaskedEqual)
 	if err == nil {
-		t.Errorf("Condition struct with bad syscall argument number should error")
-	}
-
-	_, err = MakeConditionMasked(3, CompareInvalid, 0x10, 0x100)
-	if err == nil {
-		t.Errorf("Condition struct with bad comparison operator should error")
-	}
-
-	_, err = MakeConditionMasked(3, CompareNotEqual, 0x10, 0x100)
-	if err == nil {
-		t.Errorf("MakeConditionMasked on not MaskedEqual should fail")
+		t.Errorf("MakeCondition with no arguments should fail")
 	}
 }
 

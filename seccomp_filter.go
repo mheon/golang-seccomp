@@ -138,7 +138,7 @@ func (f *ScmpFilter) Merge(src *ScmpFilter) error {
 
 	// Merge the filters
 	retCode := C.seccomp_merge(f.filterCtx, src.filterCtx)
-	if syscall.Errno(-1 * retCode) == syscall.EINVAL {
+	if syscall.Errno(-1*retCode) == syscall.EINVAL {
 		return fmt.Errorf("Filters could not be merged due to a mismatch in attributes or invalid filter!")
 	} else if retCode != 0 {
 		return syscall.Errno(-1 * retCode)
