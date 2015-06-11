@@ -3,20 +3,6 @@
 // Internal functions for libseccomp Go bindings
 // No exported functions
 
-/*
- * This library is free software; you can redistribute it and/or modify it
- * under the terms of version 2.1 of the GNU Lesser General Public License as
- * published by the Free Software Foundation.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
- * for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this library; if not, see <http://www.gnu.org/licenses>.
- */
-
 package seccomp
 
 import (
@@ -39,6 +25,13 @@ const uint32_t C_ARCH_X86          = SCMP_ARCH_X86;
 const uint32_t C_ARCH_X86_64       = SCMP_ARCH_X86_64;
 const uint32_t C_ARCH_X32          = SCMP_ARCH_X32;
 const uint32_t C_ARCH_ARM          = SCMP_ARCH_ARM;
+const uint32_t C_ARCH_AARCH64      = SCMP_ARCH_AARCH64;
+const uint32_t C_ARCH_MIPS         = SCMP_ARCH_MIPS;
+const uint32_t C_ARCH_MIPS64       = SCMP_ARCH_MIPS64;
+const uint32_t C_ARCH_MIPS64N32    = SCMP_ARCH_MIPS64N32;
+const uint32_t C_ARCH_MIPSEL       = SCMP_ARCH_MIPSEL;
+const uint32_t C_ARCH_MIPSEL64     = SCMP_ARCH_MIPSEL64;
+const uint32_t C_ARCH_MIPSEL64N32  = SCMP_ARCH_MIPSEL64N32;
 
 const uint32_t C_ACT_KILL          = SCMP_ACT_KILL;
 const uint32_t C_ACT_TRAP          = SCMP_ACT_TRAP;
@@ -49,6 +42,7 @@ const uint32_t C_ACT_ALLOW         = SCMP_ACT_ALLOW;
 const uint32_t C_ATTRIBUTE_DEFAULT = (uint32_t)SCMP_FLTATR_ACT_DEFAULT;
 const uint32_t C_ATTRIBUTE_BADARCH = (uint32_t)SCMP_FLTATR_ACT_BADARCH;
 const uint32_t C_ATTRIBUTE_NNP     = (uint32_t)SCMP_FLTATR_CTL_NNP;
+const uint32_t C_ATTRIBUTE_TSYNC   = (uint32_t)SCMP_FLTATR_TSYNC;
 
 const int      C_CMP_NE            = (int)SCMP_CMP_NE;
 const int      C_CMP_LT            = (int)SCMP_CMP_LT;
@@ -94,6 +88,7 @@ const (
 	filterAttrActDefault scmpFilterAttr = iota
 	filterAttrActBadArch scmpFilterAttr = iota
 	filterAttrNNP        scmpFilterAttr = iota
+	filterAttrTSync      scmpFilterAttr = iota
 )
 
 const (
@@ -101,7 +96,7 @@ const (
 	scmpError C.int = -1
 	// Comparison boundaries to check for architecture validity
 	archStart ScmpArch = ArchNative
-	archEnd   ScmpArch = ArchARM
+	archEnd   ScmpArch = ArchMIPSEL64N32
 	// Comparison boundaries to check for action validity
 	actionStart ScmpAction = ActKill
 	actionEnd   ScmpAction = ActAllow
@@ -112,15 +107,27 @@ const (
 
 // Nonexported functions
 
+// Exit with error, as provided version of Libseccomp is too low
+func errorOnVersionTooLow() {
+	fmt.Fprintf(os.Stderr, "Libseccomp version too low: minimum supported is 2.2.1, detected %d.%d.%d", C.C_VERSION_MAJOR, C.C_VERSION_MINOR, C.C_VERSION_MICRO)
+	os.Exit(-1)
+}
+
 // Init function: Verify library version is appropriate
 func init() {
-	if C.C_VERSION_MAJOR < 2 || C.C_VERSION_MAJOR == 2 &&
-		C.C_VERSION_MINOR < 1 {
+	// No versions of the 1.x library are supported
+	if C.C_VERSION_MAJOR < 2 {
+		errorOnVersionTooLow()
+	}
 
-		fmt.Fprintf(os.Stderr, "Libseccomp version too low:"+
-			"minimum supported is 2.1.0, detected %d.%d.%d", C.C_VERSION_MAJOR,
-			C.C_VERSION_MINOR, C.C_VERSION_MICRO)
-		os.Exit(-1)
+	// Versions 2.0 and 2.1 are not supported
+	if C.C_VERSION_MAJOR == 2 && C.C_VERSION_MINOR < 2 {
+		errorOnVersionTooLow()
+	}
+
+	// Version 2.2.0 is not supported - need at least 2.2.1
+	if C.C_VERSION_MAJOR == 2 && C.C_VERSION_MINOR == 2 && C.C_VERSION_MICRO < 1 {
+		errorOnVersionTooLow()
 	}
 }
 
@@ -244,7 +251,7 @@ func sanitizeAction(in ScmpAction) error {
 	}
 
 	if inTmp != ActTrace && inTmp != ActErrno && (in&0xFFFF0000) != 0 {
-		return fmt.Errorf("Lowest 16 bits must be zeroed except for Trace " +
+		return fmt.Errorf("Highest 16 bits must be zeroed except for Trace " +
 			"and Errno")
 	}
 
@@ -271,6 +278,20 @@ func archFromNative(a C.uint32_t) (ScmpArch, error) {
 		return ArchARM, nil
 	case C.C_ARCH_NATIVE:
 		return ArchNative, nil
+	case C.C_ARCH_AARCH64:
+		return ArchARM64, nil
+	case C.C_ARCH_MIPS:
+		return ArchMIPS, nil
+	case C.C_ARCH_MIPS64:
+		return ArchMIPS64, nil
+	case C.C_ARCH_MIPS64N32:
+		return ArchMIPS64N32, nil
+	case C.C_ARCH_MIPSEL:
+		return ArchMIPSEL, nil
+	case C.C_ARCH_MIPSEL64:
+		return ArchMIPSEL64, nil
+	case C.C_ARCH_MIPSEL64N32:
+		return ArchMIPSEL64N32, nil
 	default:
 		return 0x0, fmt.Errorf("Unrecognized architecture")
 	}
@@ -287,6 +308,20 @@ func (a ScmpArch) toNative() C.uint32_t {
 		return C.C_ARCH_X32
 	case ArchARM:
 		return C.C_ARCH_ARM
+	case ArchARM64:
+		return C.C_ARCH_AARCH64
+	case ArchMIPS:
+		return C.C_ARCH_MIPS
+	case ArchMIPS64:
+		return C.C_ARCH_MIPS64
+	case ArchMIPS64N32:
+		return C.C_ARCH_MIPS64N32
+	case ArchMIPSEL:
+		return C.C_ARCH_MIPSEL
+	case ArchMIPSEL64:
+		return C.C_ARCH_MIPSEL64
+	case ArchMIPSEL64N32:
+		return C.C_ARCH_MIPSEL64N32
 	case ArchNative:
 		return C.C_ARCH_NATIVE
 	default:
@@ -352,7 +387,7 @@ func (a ScmpAction) toNative() C.uint32_t {
 	}
 }
 
-// Internal only, assumes safe action
+// Internal only, assumes safe attribute
 func (a scmpFilterAttr) toNative() uint32 {
 	switch a {
 	case filterAttrActDefault:
@@ -361,6 +396,8 @@ func (a scmpFilterAttr) toNative() uint32 {
 		return uint32(C.C_ATTRIBUTE_BADARCH)
 	case filterAttrNNP:
 		return uint32(C.C_ATTRIBUTE_NNP)
+	case filterAttrTSync:
+		return uint32(C.C_ATTRIBUTE_TSYNC)
 	default:
 		return 0x0
 	}
