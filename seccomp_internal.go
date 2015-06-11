@@ -20,6 +20,14 @@ import (
 #include <stdlib.h>
 #include <seccomp.h>
 
+#if SCMP_VER_MAJOR < 1
+#error Minimum supported version of Libseccomp is v2.2.1
+#elif SCMP_VER_MAJOR == 2 && SCMP_VER_MINOR < 2
+#error Minimum supported version of Libseccomp is v2.2.1
+#elif SCMP_VER_MAJOR == 2 && SCMP_VER_MINOR == 2 && SCMP_VER_MICRO < 1
+#error Minimum supported version of Libseccomp is v2.2.1
+#endif
+
 const uint32_t C_ARCH_NATIVE       = SCMP_ARCH_NATIVE;
 const uint32_t C_ARCH_X86          = SCMP_ARCH_X86;
 const uint32_t C_ARCH_X86_64       = SCMP_ARCH_X86_64;
@@ -42,7 +50,7 @@ const uint32_t C_ACT_ALLOW         = SCMP_ACT_ALLOW;
 const uint32_t C_ATTRIBUTE_DEFAULT = (uint32_t)SCMP_FLTATR_ACT_DEFAULT;
 const uint32_t C_ATTRIBUTE_BADARCH = (uint32_t)SCMP_FLTATR_ACT_BADARCH;
 const uint32_t C_ATTRIBUTE_NNP     = (uint32_t)SCMP_FLTATR_CTL_NNP;
-const uint32_t C_ATTRIBUTE_TSYNC   = (uint32_t)SCMP_FLTATR_TSYNC;
+const uint32_t C_ATTRIBUTE_TSYNC   = (uint32_t)SCMP_FLTATR_CTL_TSYNC;
 
 const int      C_CMP_NE            = (int)SCMP_CMP_NE;
 const int      C_CMP_LT            = (int)SCMP_CMP_LT;
@@ -88,7 +96,7 @@ const (
 	filterAttrActDefault scmpFilterAttr = iota
 	filterAttrActBadArch scmpFilterAttr = iota
 	filterAttrNNP        scmpFilterAttr = iota
-	filterAttrTSync      scmpFilterAttr = iota
+	filterAttrTsync      scmpFilterAttr = iota
 )
 
 const (
@@ -396,7 +404,7 @@ func (a scmpFilterAttr) toNative() uint32 {
 		return uint32(C.C_ATTRIBUTE_BADARCH)
 	case filterAttrNNP:
 		return uint32(C.C_ATTRIBUTE_NNP)
-	case filterAttrTSync:
+	case filterAttrTsync:
 		return uint32(C.C_ATTRIBUTE_TSYNC)
 	default:
 		return 0x0
