@@ -1,5 +1,4 @@
 Golang bindings for libseccomp
 ==============================
 
-This repository is frozen. Ongoing development is moving under the Libseccomp
-github organization.
+The bindings have moved to a new home under [the Libseccomp github organization](https://github.com/seccomp/libseccomp-golang).
